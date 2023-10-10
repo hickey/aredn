@@ -273,16 +273,19 @@ end
 -- select ports and dhcp files based on mode
 local portfile  = "/etc/config.mesh/_setup.ports"
 local dhcpfile  = "/etc/config.mesh/_setup.dhcp"
+local dhcpoptfile = "/etc/config.mesh/_setup.dhcpopt"
 local aliasfile = "/etc/config.mesh/aliases"
 local servfile = "/etc/config.mesh/_setup.services"
 if is_null(cfg.dmz_mode) then
     portfile = portfile .. ".nat"
     dhcpfile = dhcpfile .. ".nat"
+    dhcpoptfile = dhcpoptfile .. ".nat"
     aliasfile = aliasfile .. ".nat"
     servfile = servfile .. ".nat"
 else
     portfile = portfile .. ".dmz"
     dhcpfile = dhcpfile .. ".dmz"
+    dhcpoptfile = dhcpoptfile .. ".dmz"
     aliasfile = aliasfile .. ".dmz"
     servfile = servfile .. ".dmz"
 end
@@ -524,7 +527,7 @@ if do_basic then
             c = 0
         end
         d = nixio.bit.band(tonumber(d), nixio.bit.lshift(255, 32 - mask_size)) + 1
-        cfg.wireguard_network_config = 
+        cfg.wireguard_network_config =
             string.format("config interface 'wgc'\n\toption proto 'wireguard'\n\toption private_key '%s'\n\toption nohostroute '1'\n\toption listen_port '%s'\n\tlist addresses '%s'\n\n",
             private, (tun_port or 5525), (ab .. c .. "." .. d)) ..
             cfg.wireguard_network_config
@@ -663,7 +666,7 @@ if h and e then
             e:write(line .. "\n")
         end
     end
-    
+
     h:close()
     e:close()
 end
@@ -826,7 +829,7 @@ if nixio.fs.access("/etc/config.mesh/olsrd", "r") then
             if is_supernode then
                 of:write("config Hna4\n\toption netaddr 10.0.0.0\n\toption netmask 255.0.0.0\n\n")
             end
-        
+
             if c:get("aredn", "@wan[0]", "olsrd_gw") == "1" then
                 of:write("config LoadPlugin\n\toption library 'olsrd_dyn_gw.so.0.5'\n\toption Interval '60'\n\tlist Ping '8.8.8.8'\n\tlist Ping '8.8.4.4'\n\n\n")
             end
@@ -843,6 +846,7 @@ c:commit("aredn")
 
 -- setup node lan dhcp
 
+-- TODO add dhcp options from setup
 if c:get("aredn", "@wan[0]", "lan_dhcp_route") == "1" or c:get("aredn", "@wan[0]", "lan_dhcp_defaultroute") == "1" then
     -- Provide stateless routes and default route
     c:set("dhcp", "@dhcp[0]", "dhcp_option", {
